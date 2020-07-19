@@ -1,0 +1,15 @@
+{
+	"name": "domain-redirect",
+	"env": {
+	    "DOMAIN": {
+		"description": "Specify a destination url",
+		"value": "https://www.example.com",
+		"required": true
+	    }
+	},
+	"options": {
+	    "allow-unauthenticated": true,
+	    "memory": "128Mi",
+	    "cpu": "1"
+	}
+}

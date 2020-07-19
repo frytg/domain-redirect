@@ -8,6 +8,8 @@ Kudos to @ahmetb for the [Cloud Run demo](https://github.com/ahmetb/multi-proces
 
 ## Setup
 
+[![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run?git_repo=https://github.com/frytg/domain-redirect.git)
+
 Set up a Cloud Run instance using this container with an environment variable `DOMAIN`. Make sure this variable includes the URL scheme (`https://`) and is not the **same** domain you are redirecting from, otherwise this will produce a recursive redirect. Then create a Domain Mapping and add the four A and AAAA (when using apex domain) or one CNAME record(s) to your DNS.
 
 Keep in mind that Cloud Run by its design obviously has a higher cold-start time than running such a redirect service from a VM, Kubernetes or similar. But on the other hand you save a lot of maintenance and hassle since the TLS certificate will be generated for you by GCP. Cloud Run also automatically upgrades http to https, so make sure your final destination supports that as well.
