@@ -1,0 +1,92 @@
+
+name: countdown push deploy
+
+
+on:
+  push:
+
+
+env:
+  IMAGE_NAME: domain-redirect
+  GCP_PROJECT_ID: frytgdigital
+  GCP_REGISTRY_REGION: eu.gcr.io
+  GCP_RUN_REGION: europe-west1
+  GCP_RUN_MEMORY: 256M
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    outputs:
+      BRANCH: ${{ steps.push.outputs.BRANCH }}
+      VERSION: ${{ steps.push.outputs.VERSION }}
+    steps:
+    - name: 👀 Checkout repo
+      uses: actions/checkout@v2.3.1
+
+    - name: 🔑 Setup Google Cloud Auth
+      uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+      with:
+        service_account_email: ${{ secrets.GCP_IAM__FRYTGDIGITAL__EMAIL }}
+        service_account_key: ${{ secrets.GCP_IAM__FRYTGDIGITAL__KEY }}
+        
+    - name: 🔑 Login to Registry
+      run: "gcloud auth configure-docker"
+
+    - name: 🚧 Building docker image
+      run: "docker build ./src/ --file ./src/Dockerfile -t image"
+
+    - name: 🏷 Tagging & Pushing docker
+      id: push
+      run: |
+        # Strip git ref prefix from version
+        BRANCH=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+
+        # Strip "v" prefix from tag name
+        [[ "${{ github.ref }}" == "refs/tags/"* ]] && BRANCH=$(echo $BRANCH | sed -e 's/^v//')
+        
+        # Add custom wrapper syntax
+        VERSION=git-run${{ github.run_number }}-day$(date +%j)-$BRANCH-${{ github.actor }}-$GITHUB_SHA
+
+        # Push image to registry
+        docker tag image $GCP_REGISTRY_REGION/$GCP_PROJECT_ID/$IMAGE_NAME:$VERSION
+        docker push $GCP_REGISTRY_REGION/$GCP_PROJECT_ID/$IMAGE_NAME:$VERSION
+  
+        # Update var
+        echo "::set-output name=BRANCH::$BRANCH"
+        echo "::set-output name=VERSION::$VERSION"
+
+    - name: 👋 Logout
+      run: "docker logout"
+
+
+  cloud-run:
+    needs: docker
+    runs-on: ubuntu-latest
+    steps:
+    - name: 🔑 Setup Google Cloud Auth
+      uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+      with:
+        service_account_email: ${{ secrets.GCP_IAM__FRYTGDIGITAL__EMAIL }}
+        service_account_key: ${{ secrets.GCP_IAM__FRYTGDIGITAL__KEY }}
+
+    - name: 🏠 Set Cloud Run environment
+      run: "gcloud config set run/platform managed"
+
+    - name: 🗺 Set Cloud Run region
+      run: "gcloud config set run/region $GCP_RUN_REGION"
+
+    - name: ℹ️ Received branch
+      run: echo ${{ needs.docker.outputs.BRANCH }}
+
+    - name: ℹ️ Received version
+      run: echo ${{ needs.docker.outputs.VERSION }}
+      
+    - name: 🚀 Deploy revision
+      run: |
+        gcloud run deploy domain-redirect-test \
+        --image $GCP_REGISTRY_REGION/$GCP_PROJECT_ID/$IMAGE_NAME:${{ needs.docker.outputs.VERSION }} \
+        --project $GCP_PROJECT_ID \
+        --allow-unauthenticated \
+        --memory $GCP_RUN_MEMORY \
+        --update-env-vars DOMAIN=www.frytg.com \
+        --format=json
