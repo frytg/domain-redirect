@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-envsubst < $PWD/nginx.template > $PWD/nginx.conf &
+envsubst '$DOMAIN' < $PWD/nginx.template > $PWD/nginx.conf && cat $PWD/nginx.conf
+
 nginx -c "$PWD/nginx.conf"
 
 wait -n

@@ -1,17 +1,16 @@
 events {}
 
 http {
-    server {
-        listen 8080;
+	server {
+		listen 8080;
 
-        access_log /dev/stdout;
-        error_log /dev/stdout;
+		access_log /dev/stdout;
+		error_log /dev/stdout;
 
-        location / {
-            return 301 ${DOMAIN}$request_uri;
-        }
-
-    }
+		location / {
+			return 301 $DOMAIN$request_uri;
+		}
+	}
 }
 
 daemon off;
