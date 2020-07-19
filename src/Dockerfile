@@ -5,7 +5,7 @@ FROM alpine:3
 RUN apk add --no-cache \
 	nginx \
 	bash \
-	envsubst
+	gettext
 
 # Create app directory
 WORKDIR /src
