@@ -88,5 +88,5 @@ jobs:
         --project $GCP_PROJECT_ID \
         --allow-unauthenticated \
         --memory $GCP_RUN_MEMORY \
-        --update-env-vars DOMAIN=www.frytg.com \
+        --update-env-vars DOMAIN=https://www.frytg.com \
         --format=json
